@@ -1,0 +1,5 @@
+- name: Check SAProuter exists
+  ansible.builtin.find:
+    file_type: directory
+    path: "{{ sap_usr_path }}/saprouter"
+  register: saprouter

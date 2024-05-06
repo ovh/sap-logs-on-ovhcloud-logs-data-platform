@@ -1,0 +1,17 @@
+- name: Discover SAP environments
+  ansible.builtin.find:
+    file_type: any
+    use_regex: true
+    paths: >-
+      {% if 'HANA' in (software_stack | upper) %}{{ sap_hana_usr_path }}/{{ sap_rsyslog_hana_sid }}{% else %}{{ sap_usr_path }}/{{ sap_rsyslog_sid }}{% endif %}
+    patterns: "{% if 'HANA' in (software_stack | upper) %}^(HDB)[0-9]{2}{% else %}^(W|ASCS|SCS|D|J|ESR)[0-9]{2}{% endif %}"
+  register: sap_envs
+
+- name: Failed if no environment has been discovered
+  ansible.builtin.fail:
+    msg: "No {{ software_stack | upper }} environment has been discovered on {{ sap_rsyslog_sid }} SID."
+  when: sap_envs.matched == 0
+
+- name: Format SAP environments
+  ansible.builtin.set_fact:
+    sap_envs_list: "{{ sap_envs.files | map(attribute='path') | map('basename') }}"

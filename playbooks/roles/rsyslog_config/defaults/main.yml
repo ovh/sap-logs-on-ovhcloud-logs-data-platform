@@ -1,0 +1,22 @@
+sap_usr_path: /usr/sap
+sap_hana_usr_path: /hana/shared
+sap_rsyslog_dir_path: /etc/rsyslog.d
+sap_rsyslog_conf_path: /etc/rsyslog.conf
+sap_rsyslog_install_path: /tmp/sap_logs_on_ldp_configuration_files
+sap_rsyslog_local_dir_path: /tmp/sap_logs_on_ldp_configuration_files/src/rsyslog.d
+ovhcloud_sap_sal_service_name: ovhcloud-sap-audit
+ovhcloud_sap_rsyslog_filename: ovhcloud-sap-rsyslog.conf
+rsyslog_ext: .conf
+sap_rsyslog_install_url: https://github.com/ovh/sap-logs-on-ovhcloud-logs-data-platform
+sap_rsyslog_install_file: rsyslog_configuration_files.tar.gz
+sap_rsyslog_conf_filename: {
+  "HDB": "hana_tenant",
+  "W": "webd",
+  "ASCS": "ascs_abap",
+  "SCS": "ascs_java",
+  "D": "as_abap",
+  "J": "as_java",
+  "ROUTER": "router",
+  "ENQS4": "enq_s4",
+  "ENQNW": "enq_nw"
+}

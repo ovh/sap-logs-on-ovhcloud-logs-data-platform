@@ -1,0 +1,15 @@
+---
+- name: Check SAP SID
+  ansible.builtin.find:
+    file_type: any
+    use_regex: true
+    paths: "{% if 'HANA' in (software_stack | upper) %}{{ sap_hana_usr_path }}{% else %}{{ sap_usr_path }}{% endif %}"
+    patterns: "{% if 'HANA' in (software_stack | upper) %}{{ sap_rsyslog_hana_sid }}{% else %}{{ sap_rsyslog_sid }}{% endif %}"
+  register: sid
+
+- name: Failed if SID doesn't exist
+  ansible.builtin.fail:
+    msg: >-
+      {% if 'HANA' in (software_stack | upper) %}{{ sap_rsyslog_hana_sid | upper }} SID doesn't exist.
+      {% else %}{{ sap_rsyslog_sid | upper }} SID doesn't exist.{% endif %}
+  when: sid.files | length == 0

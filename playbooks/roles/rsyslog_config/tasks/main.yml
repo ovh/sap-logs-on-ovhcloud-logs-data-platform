@@ -1,0 +1,161 @@
+---
+- name: Create default SAP environments variables
+  ansible.builtin.set_fact:
+    sap_rsyslog_sid: "{{ sap_sid }}"
+    sap_rsyslog_hana_sid: "{{ hana_sid }}"
+
+- name: Create default SAP environments dictionary variable
+  ansible.builtin.set_fact:
+    sap_envs_dict: "{{ sap_envs_dict | default([]) }}"
+
+- name: Check is environment HANA
+  ansible.builtin.include_tasks:
+    file: is_hana.yml
+
+- name: Retrieve os-release
+  ansible.builtin.slurp:
+    src: "{{ ansible_distribution_file_path }}"
+  register: slurp_default
+
+- name: Set OS release ID
+  ansible.builtin.set_fact:
+    os_release_id: "{{ slurp_default['content'] | b64decode | regex_findall('^ID=\"(.*)\"$') | first | default('sles') }}"
+
+- name: Check sources
+  ansible.builtin.stat:
+    path: "{{ sap_rsyslog_install_path }}"
+  register: sap_rsyslog_install
+
+- name: Check mandatory parameters
+  ansible.builtin.include_tasks:
+    file: mandatory.yml
+
+- name: Check audit variables
+  ansible.builtin.set_fact:
+    audit_ldp_target_platform: "{{ ldp_target_platform }}"
+    audit_ldp_ca_file_path: "{{ ldp_ca_file_path }}"
+  when: audit_ldp_target_platform == None or audit_ldp_ca_file_path == None
+
+- name: Create directory in /tmp
+  ansible.builtin.file:
+    path: "{{ sap_rsyslog_install_path }}"
+    state: directory
+    mode: "0755"
+  delegate_to: localhost
+  changed_when: true
+
+- name: Get latest version of rsyslog configuration files
+  ansible.builtin.uri:
+    url: "{{ sap_rsyslog_install_url }}/releases/latest"
+  delegate_to: localhost
+  register: latest_version
+
+- name: Retrieve rsyslog configuration files
+  ansible.builtin.get_url:
+    url: "{{ sap_rsyslog_install_url }}/archive/refs/tags/{{ latest_version.url | split('/') | last }}.tar.gz"
+    dest: "{{ sap_rsyslog_install_path }}/{{ sap_rsyslog_install_file }}"
+    mode: "0644"
+  delegate_to: localhost
+
+- name: Unarchive configuration files
+  ansible.builtin.unarchive:
+    src: "{{ sap_rsyslog_install_path }}/{{ sap_rsyslog_install_file }}"
+    dest: "{{ sap_rsyslog_install_path }}"
+    extra_opts:
+      - --strip-components=1
+  delegate_to: localhost
+
+- name: Discover SAP SID
+  ansible.builtin.include_tasks:
+    file: discover_sid.yml
+  when:
+    (software_stack != None and software_stack != "HANA" and sap_rsyslog_sid == None and not force) or
+    (software_stack != None and software_stack == "HANA" and sap_rsyslog_hana_sid == None and not force)
+
+- name: Check SAP SID
+  ansible.builtin.include_tasks:
+    file: check_sid.yml
+  when:
+    (software_stack != None and software_stack != "HANA" and sap_rsyslog_sid != None and not force) or
+    (software_stack != None and software_stack == "HANA" and sap_rsyslog_hana_sid != None and not force)
+
+- name: Discover SAP environments
+  ansible.builtin.include_tasks:
+    file: discover_env.yml
+  when:
+    (software_stack != None and software_stack != "HANA" and sap_rsyslog_sid != None and not force) or
+    (software_stack != None and software_stack == "HANA" and not force)
+
+- name: Discover SAP environments for ENQ or TENANTDB
+  ansible.builtin.include_tasks:
+    file: create_envs_dict.yml
+  when:
+    (software_stack != None and software_stack != "HANA" and sap_rsyslog_sid != None and not force) or
+    (software_stack != None and software_stack == "HANA" and not force)
+
+- name: Discover HDB
+  ansible.builtin.include_tasks:
+    file: discover_hdb.yml
+  when:
+    (software_stack != None and software_stack != "HANA" and sap_rsyslog_hana_sid == None and not force)
+
+- name: Discover SAProuter
+  ansible.builtin.include_tasks:
+    file: is_saprouter.yml
+
+- name: Check rsyslog file
+  ansible.builtin.include_tasks:
+    file: check_rsyslog_file.yml
+
+- name: Set default SAP environments variable
+  ansible.builtin.set_fact:
+    sap_rsyslog_sid: "NIL"
+    sap_rsyslog_hana_sid: "NIL"
+  when: (sap_rsyslog_sid == None and sap_rsyslog_hana_sid == None)
+
+- name: Set default SAP SID environment variable
+  ansible.builtin.set_fact:
+    sap_rsyslog_sid: "NIL"
+  when:
+    (sap_rsyslog_sid == None and software_stack == None) or
+    (sap_rsyslog_sid == None and (software_stack | upper) == "HANA") or
+    (check_hana_sid.matched > 0 and sap_rsyslog_sid == None)
+
+- name: Set default SAP HANA environments variable
+  ansible.builtin.set_fact:
+    sap_rsyslog_hana_sid: "NIL"
+  when:
+    (sap_rsyslog_hana_sid == None and software_stack == None) or
+    (sap_rsyslog_hana_sid == None and force)
+
+- name: Concatenate files
+  ansible.builtin.template:
+    src: "{{ playbook_dir }}/roles/{{ role_name }}/templates/file.j2"
+    dest: "{{ sap_rsyslog_dir_path }}/{{ ovhcloud_sap_rsyslog_filename }}"
+    mode: preserve
+  changed_when: true
+
+- name: Install AS ABAP Security Audit Log service
+  ansible.builtin.include_tasks:
+    file: collect_sal.yml
+  when: collect_sal
+
+- name: Disable RepeatedMsgReduction
+  ansible.builtin.lineinfile:
+    path: "{{ sap_rsyslog_conf_path }}"
+    search_string: "$RepeatedMsgReduction   on"
+    line: "$RepeatedMsgReduction   off"
+  changed_when: true
+
+- name: Delete directory in /tmp
+  ansible.builtin.file:
+    path: "{{ sap_rsyslog_install_path }}"
+    state: absent
+  delegate_to: localhost
+  changed_when: true
+
+- name: Start service rsyslog and enable it
+  ansible.builtin.service:
+    name: rsyslog
+    state: restarted
+  changed_when: true

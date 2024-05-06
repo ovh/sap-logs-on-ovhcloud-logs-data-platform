@@ -1,0 +1,26 @@
+- name: Discover SAP environments tenant
+  ansible.builtin.find:
+    file_type: any
+    use_regex: true
+    paths: "{{ sap_usr_path }}/{{ sap_rsyslog_hana_sid }}/{{ item }}/{{ ansible_hostname }}/trace"
+    patterns: "^DB_[A-Z0-9]{3}"
+  loop: "{{ sap_envs_list }}"
+  register: sap_tenants
+
+- name: Create formatted SAP environments
+  ansible.builtin.set_fact:
+    sap_envs_dict: "{{ sap_envs_dict \
+      | default([]) + [dict({'type': item.item[:-2], \
+        'instance_number': item.item[-2:], \
+        'tenants': (item.files | map(attribute='path') | map('basename')), \
+        'filename': sap_rsyslog_conf_filename[item.item[:-2]] + rsyslog_ext})] }}"
+  loop: "{{ sap_tenants.results }}"
+
+- name: Add ENQ environment
+  ansible.builtin.set_fact:
+    sap_envs_dict: "{{ sap_envs_dict \
+      | default([]) + [dict({'type': item.type, \
+        'instance_number': item.instance_number, \
+        'tenants': [], \
+        'filename': sap_rsyslog_conf_filename['ENQ' + (software_stack | upper)] + rsyslog_ext})] }}"
+  loop: "{{ sap_envs_dict | selectattr('type', 'in', ['D', 'J', 'ECS']) }}"

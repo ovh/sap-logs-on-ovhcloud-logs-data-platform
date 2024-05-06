@@ -1,0 +1,5 @@
+- name: Check HANA path with SID
+  ansible.builtin.find:
+    file_type: directory
+    path: "/hana/shared/{{ sap_rsyslog_hana_sid }}"
+  register: check_hana_sid

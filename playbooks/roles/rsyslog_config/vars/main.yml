@@ -1,0 +1,10 @@
+---
+sap_sid:
+ldp_target_platform:
+ldp_ca_file_path:
+audit_ldp_target_platform:
+audit_ldp_ca_file_path:
+software_stack:
+hana_sid:
+collect_sal: false
+force: false

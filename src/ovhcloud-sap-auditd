@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+OVHCLOUD_SAP_SID="$1"
+OVHCLOUD_SAP_INSTANCE_NUMBER="$2"
+OVHCLOUD_SAP_SOFTWARE_STACK="$3"
+
+if [ -z "${OVHCLOUD_SAP_SID}" ] || [ -z "${OVHCLOUD_SAP_INSTANCE_NUMBER}" ] || [ -z "${OVHCLOUD_SAP_SOFTWARE_STACK}" ]; then
+        echo "Environment OVHCLOUD_SAP_SID, OVHCLOUD_SAP_INSTANCE_NUMBER and OVHCLOUD_SAP_SOFTWARE_STACK have to be defined to execute the process." >&2
+        exit 1
+fi
+
+audit_folder="/usr/sap/${OVHCLOUD_SAP_SID}/D${OVHCLOUD_SAP_INSTANCE_NUMBER}/log"
+date_now=$(date +%Y%m%d)
+audit_tag="security_audit_abap"
+# File to store offset
+offset_filename="/var/tmp/ovhcloud-sap-audit-offset.txt"
+
+if [ ! -s "${offset_filename}" ]; then
+    echo 0 > $offset_filename
+fi
+
+# Split the line every N characters (change N as needed)
+nb_char=200
+
+while true; do
+    if [ "${date_now}" != $(date +%Y%m%d) ]; then
+        date_now=$(date +%Y%m%d)
+        echo 0 > $offset_filename
+    fi
+
+    count=$(cat "${offset_filename}")
+
+    # File to be monitored
+    if [ ${OVHCLOUD_SAP_SOFTWARE_STACK} == "NW" ]; then
+        audit_filename="${audit_folder}/audit_${date_now}"
+    elif [ ${OVHCLOUD_SAP_SOFTWARE_STACK} == "S4" ]; then
+        audit_filename="${audit_folder}/${date_now}.AUD"
+    fi
+
+    # Follow the input file for new content
+    audit_content=$(tail -c +$count "$audit_filename" | tr -d "\0")
+
+    for (( i=0; $(("${#audit_content}" - $i)) >= $nb_char; i+=$nb_char )); do
+        message=$(echo "${audit_content:i:nb_char}")
+
+        logger -t "${audit_tag}" "${message}"
+        # Update character count (utf-16)
+        count=$(( $count + ($nb_char * 2) ))
+
+        # Write the character count to the file
+        echo $count > $offset_filename
+    done
+
+    sleep 10
+done

@@ -1,0 +1,11 @@
+- name: Check mandatory variables are defined
+  ansible.builtin.assert:
+    that:
+      - ldp_target_platform != None
+      - ldp_ca_file_path != None
+
+- name: Check mandatory variables are defined
+  ansible.builtin.assert:
+    that:
+      - software_stack is match("^[Ss]4") or software_stack is match("^[Nn][Ww]") or software_stack is match("^[Hn][Aa][Nn][Aa]")
+  when: software_stack != None

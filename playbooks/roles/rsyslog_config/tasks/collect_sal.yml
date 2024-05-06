@@ -1,0 +1,45 @@
+- name: Get AS ABAP environments
+  ansible.builtin.set_fact:
+    abap_envs: "{{ (sap_envs_dict | selectattr('type', 'in', ['D'])) }}"
+
+- name: Install ovhcloud-sap-audit.service
+  when: abap_envs | length > 0
+  block:
+    - name: Add primary instance number variable
+      ansible.builtin.set_fact:
+        instno_service: "{{ abap_envs[0].instance_number }}"
+
+    - name: Create ovhcloud-sap-audit.service file
+      ansible.builtin.copy:
+        src: "{{ sap_rsyslog_install_path }}/src/{{ ovhcloud_sap_sal_service_name }}.service"
+        dest: /etc/systemd/system/{{ ovhcloud_sap_sal_service_name }}.service
+        mode: "0644"
+
+    - name: Create ovhcloud-sap-audit.service.d directory
+      ansible.builtin.file:
+        path: "/etc/systemd/system/{{ ovhcloud_sap_sal_service_name }}.service.d"
+        state: directory
+        mode: "0755"
+
+    - name: Edit ovhcloud-sap-audit.service
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/roles/{{ role_name }}/templates/{{ ovhcloud_sap_sal_service_name }}.service.j2"
+        dest: "/etc/systemd/system/{{ ovhcloud_sap_sal_service_name }}.service.d/override.conf"
+        mode: "0644"
+
+    - name: Create ovhcloud-sap-auditd file
+      ansible.builtin.copy:
+        src: "{{ sap_rsyslog_install_path }}/src/{{ ovhcloud_sap_sal_service_name }}d"
+        dest: "/usr/sbin/{{ ovhcloud_sap_sal_service_name }}d"
+        mode: "0755"
+
+    - name: Reload daemon
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+
+    - name: Start service ovhcloud-sap-audit and enable it
+      ansible.builtin.service:
+        name: "{{ ovhcloud_sap_sal_service_name }}"
+        state: started
+        enabled: true
+      changed_when: true

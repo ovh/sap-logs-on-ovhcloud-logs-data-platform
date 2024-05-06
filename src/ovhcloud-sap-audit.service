@@ -1,0 +1,15 @@
+[Unit]
+Description=OVHcloud SAP audit  
+Requires=syslog.socket
+
+[Service]
+Type=simple
+Environment="OVHCLOUD_SAP_SID="
+Environment="OVHCLOUD_SAP_INSTANCE_NUMBER="
+Environment="OVHCLOUD_SAP_SOFTWARE_STACK="
+ExecStart=/usr/sbin/ovhcloud-sap-auditd $OVHCLOUD_SAP_SID $OVHCLOUD_SAP_INSTANCE_NUMBER $OVHCLOUD_SAP_SOFTWARE_STACK
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target

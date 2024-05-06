@@ -1,0 +1,22 @@
+- name: Discover SAP SID
+  ansible.builtin.find:
+    file_type: any
+    use_regex: true
+    paths: "{% if 'HANA' in (software_stack | upper) %}{{ sap_hana_usr_path }}{% else %}{{ sap_usr_path }}{% endif %}"
+    patterns: "(^[A-Z0-9]{3})"
+  register: sid
+
+- name: Failed if SID doesn't exist
+  ansible.builtin.fail:
+    msg: "No {{ software_stack | upper }} environment on this server."
+  when: sid.files | length == 0
+
+- name: Get SID
+  ansible.builtin.set_fact:
+    sap_rsyslog_sid: "{{ sid.files[0].path[-3:] }}"
+  when: sid.files and software_stack != "HANA"
+
+- name: Get SID
+  ansible.builtin.set_fact:
+    sap_rsyslog_hana_sid: "{{ sid.files[0].path[-3:] }}"
+  when: sid.files and software_stack == "HANA"

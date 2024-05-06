@@ -1,0 +1,8 @@
+- name: Retrieve DEFAULT.PFL
+  ansible.builtin.slurp:
+    src: "{{ sap_usr_path }}/{{ sap_rsyslog_sid }}/SYS/profile/DEFAULT.PFL"
+  register: slurp_default
+
+- name: Set HANA SID
+  ansible.builtin.set_fact:
+    sap_rsyslog_hana_sid: "{{ slurp_default['content'] | b64decode | regex_findall('dbs/hdb/dbname = (...)') | first | default('NIL') }}"

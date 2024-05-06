@@ -1,0 +1,13 @@
+- name: Check if rsyslog file already exists
+  ansible.builtin.stat:
+    path: "{{ sap_rsyslog_dir_path }}/{{ ovhcloud_sap_rsyslog_filename }}"
+  register: rsyslog
+
+- name: Create backup
+  ansible.builtin.copy:
+    src: "{{ sap_rsyslog_dir_path }}/{{ ovhcloud_sap_rsyslog_filename }}"
+    dest: "{{ sap_rsyslog_dir_path }}/{{ ovhcloud_sap_rsyslog_filename }}.old"
+    mode: preserve
+    remote_src: true
+  when: rsyslog.stat.exists
+  changed_when: true

@@ -1,0 +1,43 @@
+{{ 
+    lookup("file", sap_rsyslog_local_dir_path + "/" + "main" + "_" + os_release_id + rsyslog_ext) 
+        | regex_replace("<LDP_TARGET_PLATFORM>", ldp_target_platform) 
+        | regex_replace("<LDP_CA_FILE_PATH>", ldp_ca_file_path)
+        | regex_replace("<AUDIT_LDP_TARGET_PLATFORM>", audit_ldp_target_platform) 
+        | regex_replace("<AUDIT_LDP_CA_FILE_PATH>", audit_ldp_ca_file_path)
+        | regex_replace("^[^#](.*)<SAP_SID>", " \\1" + sap_rsyslog_sid, multiline=True)
+        | regex_replace("^[^#](.*)<HANA_SID>", " \\1" + sap_rsyslog_hana_sid, multiline=True)
+}}
+
+{% if saprouter.matched > 0 %}
+{{ 
+    lookup("file", sap_rsyslog_local_dir_path + "/" + "router" + rsyslog_ext) 
+}}
+{% endif %}
+
+{% for item in sap_envs_dict %}
+{% set tenants = item.tenants %}
+{% if not tenants %}
+{% set tenants = ["NIL"] %}
+{% endif %}
+{% if check_hana_sid.matched > 0 and item.type == "HDB" %}
+{{ 
+    lookup("file", sap_rsyslog_local_dir_path + "/" + "hana" + rsyslog_ext) 
+        | regex_replace("<SAP_SID>", sap_rsyslog_sid)
+        | regex_replace("<HANA_SID>", sap_rsyslog_hana_sid)
+        | regex_replace("<INSTANCE_NUMBER>", item.instance_number)
+        | regex_replace("<HOSTNAME>", ansible_hostname)
+        | regex_replace("<SERVER_TYPE>", item.type)
+}}
+{% endif %}
+{% for tenant in tenants %}
+{{ 
+    lookup("file", sap_rsyslog_local_dir_path + "/" + item.filename) 
+        | regex_replace("<SAP_SID>", sap_rsyslog_sid)
+        | regex_replace("<HANA_SID>", sap_rsyslog_hana_sid)
+        | regex_replace("<INSTANCE_NUMBER>", item.instance_number)
+        | regex_replace("<HOSTNAME>", ansible_hostname)
+        | regex_replace("<SERVER_TYPE>", item.type)
+        | regex_replace("<HANA_TENANT>", tenant[-3:])
+}}
+{% endfor %}
+{% endfor %}
