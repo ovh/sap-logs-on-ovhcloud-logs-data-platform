@@ -8,3 +8,5 @@ software_stack:
 hana_sid:
 collect_sal: false
 force: false
+ldp_ca:
+audit_ldp_ca:

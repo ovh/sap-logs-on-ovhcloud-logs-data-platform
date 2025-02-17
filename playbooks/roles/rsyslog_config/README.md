@@ -40,16 +40,18 @@ sap_rsyslog_conf_filename: {
 
 ### Custom variables
 
-```yaml
-sap_sid:
-ldp_target_platform:
-ldp_ca_file_path:
-audit_ldp_target_platform:
-audit_ldp_ca_file_path:
-software_stack:
-hana_sid:
-collect_sal: false
-```
+| Custom variable | Description |
+| --------------- | ----------- |
+| sap_sid         | The System ID (SID) of your SAP system, used to identify your SAP instance. |
+| ldp_target_platform | The endpoint URL of your Log Data Platform (LDP) instance, where logs will be sent (e.g., gra159-xxx.gra159.logs.ovh.com). |
+| ldp_ca_file_path | The file path to the LDP platform certificate, required for secure log transmission (e.g., /etc/rsyslog.d/ldp.crt). |
+| audit_ldp_target_platform | The endpoint URL of your LDP platform specifically for audit logs, where audit logs will be sent (e.g., gra159-xxx.gra159.logs.ovh.com). |
+| audit_ldp_ca_file_path | The file path to the audit LDP platform certificate, required for secure audit log transmission (e.g., /etc/rsyslog.d/audit_ldp.crt). |
+| software_stack | The software stack type, which can be one of the following: NW (NetWeaver), S4 (S/4HANA), or HANA (SAP HANA). |
+| hana_sid | The System ID (SID) of your SAP HANA system, used to identify your SAP HANA instance. |
+| collect_sal | A boolean flag to enable (true) or disable (false) the extraction of audit logs on your ABAP system. |
+| ldp_ca | The LDP platform certificate in PEM format, required if the certificate is not already present on your server. |
+| audit_ldp_ca | The audit LDP platform certificate in PEM format, required if the certificate is not already present on your server. |
 
 ## Dependencies
 
@@ -74,4 +76,4 @@ N/A
 
 ## License
 
-## Author Information
+This code is released under the Apache 2.0 License. Please see LICENSE for more details.
