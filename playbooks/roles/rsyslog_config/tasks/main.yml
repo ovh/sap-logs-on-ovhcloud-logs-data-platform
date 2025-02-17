@@ -65,6 +65,22 @@
       - --strip-components=1
   delegate_to: localhost
 
+- name: Write the audit certificate file
+  ansible.builtin.lineinfile:
+    path: "{{ audit_ldp_ca_file_path }}"
+    line: "{{ audit_ldp_ca }}"
+    mode: '600'
+    create: true
+  when: audit_ldp_ca is undefined or audit_ldp_ca != None
+
+- name: Write the certificate file
+  ansible.builtin.lineinfile:
+    path: "{{ ldp_ca_file_path }}"
+    line: "{{ ldp_ca }}"
+    mode: '600'
+    create: true
+  when: ldp_ca is undefined or ldp_ca != None
+
 - name: Discover SAP SID
   ansible.builtin.include_tasks:
     file: discover_sid.yml
