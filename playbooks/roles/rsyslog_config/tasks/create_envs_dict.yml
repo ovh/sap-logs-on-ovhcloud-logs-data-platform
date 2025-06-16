@@ -14,13 +14,25 @@
         'instance_number': item.item[-2:], \
         'tenants': (item.files | map(attribute='path') | map('basename')), \
         'filename': sap_rsyslog_conf_filename[item.item[:-2]] + rsyslog_ext})] }}"
+  when: sap_tenants.results | selectattr('files') | length > 0
   loop: "{{ sap_tenants.results }}"
+
+- name: Add SAP environment
+  ansible.builtin.set_fact:
+    sap_envs_dict: "{{ sap_envs_dict \
+      | default([]) + [dict({'type': item[:-2], \
+        'instance_number': item[-2:], \
+        'tenants': [], \
+        'filename': sap_rsyslog_conf_filename[item[:-2]] + rsyslog_ext})] }}"
+  when: item[:-2] != 'ERS'
+  loop: "{{ sap_envs_list }}"
 
 - name: Add ENQ environment
   ansible.builtin.set_fact:
     sap_envs_dict: "{{ sap_envs_dict \
-      | default([]) + [dict({'type': item.type, \
-        'instance_number': item.instance_number, \
+      | default([]) + [dict({'type': item[:-2], \
+        'instance_number': item[-2:], \
         'tenants': [], \
         'filename': sap_rsyslog_conf_filename['ENQ' + (software_stack | upper)] + rsyslog_ext})] }}"
-  loop: "{{ sap_envs_dict | selectattr('type', 'in', ['D', 'J', 'ECS']) }}"
+  when: item[:-2] == 'ERS'
+  loop: "{{ sap_envs_list }}"
