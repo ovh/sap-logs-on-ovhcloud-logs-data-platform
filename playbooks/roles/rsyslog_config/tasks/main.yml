@@ -44,26 +44,14 @@
   delegate_to: localhost
   changed_when: true
 
-- name: Get latest version of rsyslog configuration files
-  ansible.builtin.uri:
-    url: "{{ sap_rsyslog_install_url }}/releases/latest"
-  delegate_to: localhost
-  register: latest_version
-
-- name: Retrieve rsyslog configuration files
-  ansible.builtin.get_url:
-    url: "{{ sap_rsyslog_install_url }}/archive/refs/tags/{{ latest_version.url | split('/') | last }}.tar.gz"
-    dest: "{{ sap_rsyslog_install_path }}/{{ sap_rsyslog_install_file }}"
+- name: Copy directory src to the same level as the playbook
+  ansible.builtin.copy:
+    src: "{{ playbook_dir + '/../src' }}"
+    dest: "{{ sap_rsyslog_install_path }}"
+    directory_mode: "0755"
     mode: "0644"
   delegate_to: localhost
-
-- name: Unarchive configuration files
-  ansible.builtin.unarchive:
-    src: "{{ sap_rsyslog_install_path }}/{{ sap_rsyslog_install_file }}"
-    dest: "{{ sap_rsyslog_install_path }}"
-    extra_opts:
-      - --strip-components=1
-  delegate_to: localhost
+  when: not sap_rsyslog_install.stat.exists
 
 - name: Write the audit certificate file
   ansible.builtin.lineinfile:
@@ -173,5 +161,6 @@
 - name: Start service rsyslog and enable it
   ansible.builtin.service:
     name: rsyslog
+    enabled: true
     state: restarted
   changed_when: true

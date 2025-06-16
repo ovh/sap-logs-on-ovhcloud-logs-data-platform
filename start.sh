@@ -24,7 +24,7 @@ declare -A SAP_RSYSLOG_CONF_FILENAME
 SAP_RSYSLOG_CONF_FILENAME[HDB]="hana_tenant"
 SAP_RSYSLOG_CONF_FILENAME[W]="webd"
 SAP_RSYSLOG_CONF_FILENAME[ASCS]="ascs_abap"
-SAP_RSYSLOG_CONF_FILENAME[SCS]="ascs_java"
+SAP_RSYSLOG_CONF_FILENAME[SCS]="scs_java"
 SAP_RSYSLOG_CONF_FILENAME[D]="as_abap"
 SAP_RSYSLOG_CONF_FILENAME[J]="as_java"
 
@@ -461,7 +461,7 @@ discover_env() {
                 | tr "\n" " "
         else
             ls "${SAP_DEFAULT_USER_PATH}/${sid}/" \
-                | grep -E "^(W|ASCS|SCS|D|J|ESR)[0-9]{2}" \
+                | grep -E "^(W|ASCS|SCS|D|J|ERS)[0-9]{2}" \
                 | tr "\n" " "
         fi
     fi

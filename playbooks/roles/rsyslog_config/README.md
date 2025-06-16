@@ -17,9 +17,11 @@ This Ansible Role contains tasks to:
 
 ```yaml
 sap_usr_path: /usr/sap
+sap_hana_usr_path: /hana/shared
 sap_rsyslog_dir_path: /etc/rsyslog.d
-sap_rsyslog_install_path: /tmp/rsyslog_conf_install
-sap_rsyslog_local_dir_path: /tmp/rsyslog_conf_install/src/rsyslog.d
+sap_rsyslog_conf_path: /etc/rsyslog.conf
+sap_rsyslog_install_path: /tmp/sap_logs_on_ldp_configuration_files
+sap_rsyslog_local_dir_path: /tmp/sap_logs_on_ldp_configuration_files/src/rsyslog.d
 ovhcloud_sap_sal_service_name: ovhcloud-sap-audit
 ovhcloud_sap_rsyslog_filename: ovhcloud-sap-rsyslog.conf
 rsyslog_ext: .conf
@@ -29,7 +31,7 @@ sap_rsyslog_conf_filename: {
   "HDB": "hana_tenant",
   "W": "webd",
   "ASCS": "ascs_abap",
-  "SCS": "ascs_java",
+  "SCS": "scs_java",
   "D": "as_abap",
   "J": "as_java",
   "ROUTER": "router",
