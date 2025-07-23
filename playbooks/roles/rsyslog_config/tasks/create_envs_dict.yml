@@ -24,7 +24,7 @@
         'instance_number': item[-2:], \
         'tenants': [], \
         'filename': sap_rsyslog_conf_filename[item[:-2]] + rsyslog_ext})] }}"
-  when: item[:-2] != 'ERS'
+  when: item[:-2] != 'ERS' and software_stack != 'HANA'
   loop: "{{ sap_envs_list }}"
 
 - name: Add ENQ environment
